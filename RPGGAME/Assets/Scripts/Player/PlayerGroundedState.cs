@@ -13,11 +13,25 @@ public class PlayerGroundedState : PlayerState
     public override void Enter()
     {
         base.Enter();
+        
+        player.canDoubleJump = true;
     }
 
     public override void Update()
     {
         base.Update();
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            stateMechine.ChangeState(player.blackhole);
+        }
+        if (Input.GetKeyDown(KeyCode.Mouse1) && HasNoSword())
+        {
+            stateMechine.ChangeState(player.aimSword);
+        }
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            stateMechine.ChangeState(player.counterAttackState);
+        }
         if (Input.GetKey(KeyCode.Mouse0))
         {
             stateMechine.ChangeState(player.PrimaryAttackState);
@@ -30,6 +44,14 @@ public class PlayerGroundedState : PlayerState
         {
             stateMechine.ChangeState(player.jumpState);
         }
+    }
+
+    private bool HasNoSword()
+    {
+        if (!player.sword)
+            return true;
+        player.sword.GetComponent<Sword_Skill_Controller>().ReturnSword();
+        return false;
     }
 
     public override void Exit()

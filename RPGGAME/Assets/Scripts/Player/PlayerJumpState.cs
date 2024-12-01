@@ -11,7 +11,12 @@ public class PlayerJumpState : PlayerState
     public override void Enter()
     {
         base.Enter();
-        
+
+        Jump();
+    }
+
+    private void Jump()
+    {
         rb.velocity = new Vector2(rb.velocity.x, player.jumpForce);
     }
 
@@ -21,6 +26,12 @@ public class PlayerJumpState : PlayerState
         if (rb.velocity.y < 0)
         {
             stateMechine.ChangeState(player.airState);
+        }
+
+        if (Input.GetKeyDown(KeyCode.Space) && player.canDoubleJump)
+        {
+            player.canDoubleJump = false;
+            Jump();
         }
     }
 
