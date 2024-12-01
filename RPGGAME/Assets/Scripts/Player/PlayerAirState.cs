@@ -16,6 +16,12 @@ public class PlayerAirState : PlayerState
     public override void Update()
     {
         base.Update();
+        
+        if (player.canDoubleJump && Input.GetKeyDown(KeyCode.Space))
+        {
+            player.canDoubleJump = false;
+            stateMechine.ChangeState(player.jumpState);
+        }
         if (player.IsWallDetected())
         {
             stateMechine.ChangeState(player.wallSlide);
@@ -29,6 +35,8 @@ public class PlayerAirState : PlayerState
         {
             player.SetVelocity(player.moveSpeed * .8f * xInput, rb.velocity.y);
         }
+
+      
     }
 
     public override void Exit()
@@ -38,3 +46,4 @@ public class PlayerAirState : PlayerState
     
     
 }
+

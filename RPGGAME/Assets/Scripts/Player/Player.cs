@@ -9,24 +9,33 @@ public class Player : Entity
 
     [Header("Attack details")] 
     public Vector2[] attackMovement;
+    public float counterAttackDuration = 0.4f;
     
 
     [Header("Move info")]
     public float moveSpeed = 8f;
     public float jumpForce;
+    public float swordReturnImpact;
+    public bool canDoubleJump;
+    private float defaultMoveSpeed;
+    private float defaultJumpForce;
+    
     [Header("Dash info")]
-    [SerializeField] private float dashCooldown;
-    private float dashUsageTimer;
     public float dashSpeed;
     public float dashDuration;
+    private float defaultDashSpeed;
     public float dashDir { get; private set; }
 
-    
 
-    
+    public SkillManager skill { get; private set; }
+    public GameObject sword { get; private set; }
 
-    
-    
+
+
+
+
+
+
     #region States
     public PlayerStateMechine stateMechine { get; private set; }
     
@@ -38,6 +47,11 @@ public class Player : Entity
     public PlayerDashState dashState { get; private set; }
     public PlayerWallJumpState wallJump { get; private set; }
     public PlayerPrimaryAttackState PrimaryAttackState { get; private set; }
+    public PlayerCounterAttackState counterAttackState { get; private set; }
+    public PlayerAimSwordState aimSword { get; private set; }
+    public PlayerCatchSwordState catchSword { get; private set; }
+    public PlayerBlackHoleState blackhole { get; private set; }
+    public PlayerDeadState deadState { get; private set; }
 
     #endregion
     protected override void Awake()
@@ -53,14 +67,21 @@ public class Player : Entity
         wallSlide = new PlayerWallSlideState(this, stateMechine, "WallSlide");
         wallJump = new PlayerWallJumpState(this, stateMechine, "Jump");
         PrimaryAttackState = new PlayerPrimaryAttackState(this, stateMechine, "Attack");
-        
+        counterAttackState = new PlayerCounterAttackState(this, stateMechine, "CounterAttack");
+        aimSword = new PlayerAimSwordState(this, stateMechine, "AimSword");
+        catchSword = new PlayerCatchSwordState(this, stateMechine, "CatchSword");
+        blackhole = new PlayerBlackHoleState(this, stateMechine, "Jump");
+        deadState = new PlayerDeadState(this, stateMechine, "Die");
     }
 
     protected override void Start()
     {
         base.Start();
-        
+        skill = SkillManager.instance;
         stateMechine.Initialize(idleState);
+        defaultMoveSpeed = moveSpeed;
+        defaultJumpForce = jumpForce;
+        defaultDashSpeed = dashSpeed;
         
     }
 
@@ -72,8 +93,45 @@ public class Player : Entity
         stateMechine.currentState.Update();
         // Debug.Log(IsWallDetected());
         CheckForDashInput();
+        if (Input.GetKeyDown(KeyCode.F))
+            skill.crystal.CanUseSkill();
         // StartCoroutine("BusyFor", .1f);
 
+    }
+
+    public override void SlowEntityBy(float _slowPercentage, float _slowDuration)
+    {
+        moveSpeed = moveSpeed * (1 - _slowPercentage);
+        jumpForce = jumpForce * (1 - _slowPercentage);
+        dashSpeed = dashSpeed * (1 - _slowPercentage);
+        anim.speed = anim.speed * (1 - _slowPercentage);
+        
+        Invoke("ReturnDefaultSpeed", _slowDuration);
+    }
+
+    protected override void ReturnDefaultSpeed()
+    {
+        base.ReturnDefaultSpeed();
+        
+        moveSpeed = defaultMoveSpeed;
+        jumpForce = defaultJumpForce;
+        dashSpeed = defaultDashSpeed;
+    }
+
+    public void AssignNewSword(GameObject _newSword)
+    {
+        sword = _newSword;
+    }
+
+    public void CatchTheSword()
+    {
+        stateMechine.ChangeState(catchSword);
+        Destroy(sword);
+    }
+
+    public void ExitBlackHoleAbility()
+    {
+        stateMechine.ChangeState(airState);
     }
 
     public IEnumerator BusyFor(float _seconds)
@@ -91,10 +149,10 @@ public class Player : Entity
         {
             return;
         }
-        dashUsageTimer -= Time.deltaTime;
-        if (Input.GetKeyDown(KeyCode.LeftShift) && dashUsageTimer <= 0)
+        
+        if (Input.GetKeyDown(KeyCode.LeftShift) && SkillManager.instance.dash.CanUseSkill())
         {
-            dashUsageTimer = dashCooldown;
+            
             dashDir = Input.GetAxisRaw("Horizontal");
 
             if (dashDir == 0)
@@ -104,11 +162,10 @@ public class Player : Entity
         }
     }
 
-    
-    
-
-    
-    
-    
-    
+    public override void Die()
+    {
+        base.Die();
+        
+        stateMechine.ChangeState(deadState);
+    }
 }
