@@ -29,6 +29,8 @@ public class Player : Entity
 
     public SkillManager skill { get; private set; }
     public GameObject sword { get; private set; }
+    
+    public Player_FX fx { get; private set; }
 
 
 
@@ -77,6 +79,7 @@ public class Player : Entity
     protected override void Start()
     {
         base.Start();
+        fx = GetComponent<Player_FX>();
         skill = SkillManager.instance;
         stateMechine.Initialize(idleState);
         defaultMoveSpeed = moveSpeed;
@@ -89,13 +92,21 @@ public class Player : Entity
 
     protected override void Update()
     {
+
+        if (Time.timeScale == 0)
+        {
+            return;
+        }
         base.Update();
         stateMechine.currentState.Update();
         // Debug.Log(IsWallDetected());
         CheckForDashInput();
-        if (Input.GetKeyDown(KeyCode.F))
+        if (Input.GetKeyDown(KeyCode.F) && skill.crystal.crystalUnlocked)
             skill.crystal.CanUseSkill();
         // StartCoroutine("BusyFor", .1f);
+        
+        if(Input.GetKeyDown(KeyCode.Alpha1))
+            Inventory.instance.UseFlask();
 
     }
 
@@ -149,6 +160,11 @@ public class Player : Entity
         {
             return;
         }
+
+        if (skill.dash.dashUnlocked == false)
+        {
+            return;
+        }
         
         if (Input.GetKeyDown(KeyCode.LeftShift) && SkillManager.instance.dash.CanUseSkill())
         {
@@ -167,5 +183,10 @@ public class Player : Entity
         base.Die();
         
         stateMechine.ChangeState(deadState);
+    }
+
+    protected override void SetupZeroKnockbavkPower()
+    {
+        knockBackPower = new Vector2(0, 0);
     }
 }

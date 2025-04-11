@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class Entity : MonoBehaviour
 {
@@ -8,28 +9,32 @@ public class Entity : MonoBehaviour
 
     public Animator anim { get; private set; }
     public Rigidbody2D rb { get; private set; }
-    public EntityFX fx { get; private set; }
+    
     public SpriteRenderer sr { get; private set; }
     public CharacterStats stats { get; private set; }
     public CapsuleCollider2D cd { get; private set; }
 
     #endregion
+    [FormerlySerializedAs("knockbackDirection")]
     [Header("Knockback info")]
-    [SerializeField] protected Vector2 knockbackDirection;
-    [SerializeField] protected float knockbackDuration;
+    [SerializeField] protected Vector2 knockBackPower = new Vector2(8, 11);
+    [SerializeField] protected Vector2 knockBackOffset = new Vector2(1, 2);
+    [SerializeField] protected float knockbackDuration = .1f;
     protected bool isKnocked;
     
     [Header("Collision info")]
     public Transform attackCheck;
-    public float attackCheckRadius;
+    public float attackCheckRadius = 1.3f;
     [SerializeField] protected Transform groundCheck;
-    [SerializeField] protected float groundCheckDistance;
+    [SerializeField] protected float groundCheckDistance = 1;
     [SerializeField] protected Transform wallCheck;
-    [SerializeField] protected float wallCheckDistance;
+    [SerializeField] protected float wallCheckDistance = 1.5f;
     [SerializeField] protected LayerMask whatIsGround;
     
     public int facingDir { get; private set; } = 1;
     protected bool facingRight = true;
+    
+    public int knockBackDir { get; private set; }
     
     public System.Action onFlipped;
     
@@ -40,7 +45,7 @@ public class Entity : MonoBehaviour
     
     protected virtual void Start()
     {
-        fx = GetComponentInChildren<EntityFX>();
+        
         anim = GetComponentInChildren<Animator>();
         rb = GetComponent<Rigidbody2D>();
         sr = GetComponentInChildren<SpriteRenderer>();
@@ -63,19 +68,47 @@ public class Entity : MonoBehaviour
         anim.speed = 1;
     }
 
-    public virtual void DamageEffect()
+    public virtual void DamageImpact()
     {
-        fx.StartCoroutine("FlashFX");
         StartCoroutine("HitKnocback");
-        Debug.Log(gameObject.name + "was damaged");
+        
+    }
+
+    public virtual void SetupKnockBackDirection(Transform _damageDirection)
+    {
+        if (_damageDirection.position.x > transform.position.x)
+        {
+            knockBackDir = -1;
+        }
+        else
+        {
+            if (_damageDirection.position.x < transform.position.x)
+            {
+                knockBackDir = 1;
+            }
+        }
+        
+    }
+
+    public void SetupKnockBackPower(Vector2 _knockBackPower)
+    {
+        knockBackPower = _knockBackPower;
     }
 
     protected virtual IEnumerator HitKnocback()
     {
         isKnocked = true;
-        rb.velocity = new Vector2(knockbackDirection.x * -facingDir, knockbackDirection.y);
+        float xOffset = Random.Range(knockBackOffset.x, knockBackOffset.y);
+        if (knockBackPower.x > 0 || knockBackPower.y > 0)
+            rb.velocity = new Vector2((knockBackPower.x + xOffset) * knockBackDir, knockBackPower.y);
         yield return new WaitForSeconds(knockbackDuration);
         isKnocked = false;
+        SetupZeroKnockbavkPower();
+    }
+
+    protected virtual void SetupZeroKnockbavkPower()
+    {
+        
     }
 
     #region Velocity
@@ -106,7 +139,7 @@ public class Entity : MonoBehaviour
     protected virtual void OnDrawGizmos()
     {
         Gizmos.DrawLine(groundCheck.position, new Vector3(groundCheck.position.x, groundCheck.position.y - groundCheckDistance));
-        Gizmos.DrawLine(wallCheck.position, new Vector3(wallCheck.position.x + wallCheckDistance, wallCheck.position.y));
+        Gizmos.DrawLine(wallCheck.position, new Vector3(wallCheck.position.x + wallCheckDistance * facingDir, wallCheck.position.y));
         Gizmos.DrawWireSphere(attackCheck.position, attackCheckRadius);
     }
     
@@ -134,16 +167,20 @@ public class Entity : MonoBehaviour
             Filp();
         }
     }
+
+    public virtual void SetupDefaultFacingDir(int _direction)
+    {
+        facingDir = _direction;
+
+        if (facingDir == -1)
+        {
+            facingRight = false;
+        }
+    }
+
     #endregion
 
-    public void MakeTransParent(bool _transparent)
-    {
-        if (_transparent)
-            sr.color = Color.clear;
-        else
-            sr.color = Color.white;
-        
-    }
+
 
     public virtual void Die()
     {

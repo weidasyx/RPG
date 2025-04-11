@@ -29,17 +29,23 @@ public class PlayerCounterAttackState : PlayerState
 
         foreach (var hit in colliders)
         {
+            if (hit.GetComponent<Arrow_Controller>() != null)
+            {
+                hit.GetComponent<Arrow_Controller>().FlipArrow();
+                SuccessfulCounterAttack();
+            }
+            
             if (hit.GetComponent<Enemy>() != null)
             {
                 if (hit.GetComponent<Enemy>().CanBeStunned())
                 {
-                    stateTimer = 10;
-                    player.anim.SetBool("SuccessfulCounterAttack", true);
+                    SuccessfulCounterAttack();
+                    player.skill.parry.UseSkill();
 
                     if (canCreateClone)
                     {
                         canCreateClone = false;
-                        player.skill.clone.CreateCloneOnCounterAttack(hit.transform);
+                        player.skill.parry.MakeMirageOnParry(hit.transform);
                     }
                     
                 }
@@ -50,6 +56,12 @@ public class PlayerCounterAttackState : PlayerState
         {
             stateMechine.ChangeState(player.idleState);
         }
+    }
+
+    private void SuccessfulCounterAttack()
+    {
+        stateTimer = 10;
+        player.anim.SetBool("SuccessfulCounterAttack", true);
     }
 
     public override void Exit()

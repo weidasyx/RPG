@@ -10,18 +10,29 @@ public class Crystal_Skill_Controller : MonoBehaviour
     private float moveSpeed;
     private bool canMove;
     private bool canExplode;
+    private Player player;
 
     private bool canGrow;
     [SerializeField] private float growSpeed;
     private Transform closestTarget;
+    [SerializeField] private LayerMask whatIsEnemy;
 
-    public void SetupCrystal(float _crystalDuration, bool _canExplode, bool _canMove, float _moveSpeed, Transform _closestTarget)
+    public void SetupCrystal(float _crystalDuration, bool _canExplode, bool _canMove, float _moveSpeed, Transform _closestTarget, Player _player)
     {
         crystalExistTimer = _crystalDuration;
         canMove = _canMove;
         canExplode = _canExplode;
         moveSpeed = _moveSpeed;
         closestTarget = _closestTarget;
+        player = _player;
+    }
+
+    public void ChooseRandomEnemy()
+    {
+        float radius = SkillManager.instance.blackhole.GetBlackholeSize();
+        Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, 25, whatIsEnemy);
+        if (colliders.Length > 0)
+            closestTarget = colliders[Random.Range(0, colliders.Length)].transform;
     }
 
     private void Update()
@@ -43,7 +54,7 @@ public class Crystal_Skill_Controller : MonoBehaviour
 
         if (canGrow)
         {
-            transform.localScale = Vector2.Lerp(transform.localScale, new Vector2(5, 5), moveSpeed * Time.deltaTime);
+            transform.localScale = Vector2.Lerp(transform.localScale, new Vector2(2, 2), moveSpeed * Time.deltaTime);
         }
     }
 
@@ -55,7 +66,12 @@ public class Crystal_Skill_Controller : MonoBehaviour
         {
             if (hit.GetComponent<Enemy>() != null)
             {
-                hit.GetComponent<Enemy>().DamageEffect();
+                hit.GetComponent<Entity>().SetupKnockBackDirection(transform);
+                player.stats.DoMagicalDamage(hit.GetComponent<CharacterStats>());
+                ItemData_Equipment equipmentAmulet = Inventory.instance.GetEquipment(EquipmentType.Amulet);
+                if(equipmentAmulet != null)
+                    equipmentAmulet.Effect(hit.transform);
+
             }
         }
     }

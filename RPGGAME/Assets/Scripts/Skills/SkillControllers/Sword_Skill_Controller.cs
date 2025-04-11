@@ -102,6 +102,8 @@ public class Sword_Skill_Controller : MonoBehaviour
         transform.parent = null;
         isReturning = true;
         
+        //sword.skill.SetCoolDown
+        
     }
 
     private void Update()
@@ -135,7 +137,7 @@ public class Sword_Skill_Controller : MonoBehaviour
             {
                 spinTimer -= Time.deltaTime;
 
-                transform.position = Vector2.MoveTowards(transform.position, new Vector2(transform.position.x + spinDirection, transform.position.y), 1.5f * Time.deltaTime);
+                //transform.position = Vector2.MoveTowards(transform.position, new Vector2(transform.position.x + spinDirection, transform.position.y), 1.5f * Time.deltaTime);
                 
 
                 if (spinTimer < 0)
@@ -212,8 +214,22 @@ public class Sword_Skill_Controller : MonoBehaviour
 
     private void SwordSkillDamage(Enemy enemy)
     {
-        enemy.DamageEffect();
-        enemy.StartCoroutine("FreezeTimerFor", freezeTimeDuration);
+        EnemyStats enemyStats = enemy.GetComponent<EnemyStats>();
+        player.stats.DoDamage(enemyStats);
+        if (player.skill.sword.timeStopUnlocked)
+            enemy.FreezeTimeFor(freezeTimeDuration);
+
+        if (player.skill.sword.volnurableUnlocked)
+        {
+            enemyStats.MakeVulFor(freezeTimeDuration);
+            Debug.Log("make is vulnerable");
+        }
+
+        
+        
+        ItemData_Equipment equipmentAmulet = Inventory.instance.GetEquipment(EquipmentType.Amulet);
+        if(equipmentAmulet != null)
+            equipmentAmulet.Effect(enemy.transform);
     }
 
     private void SetupTargetForBounce(Collider2D collider)
@@ -256,6 +272,8 @@ public class Sword_Skill_Controller : MonoBehaviour
         
         rb.isKinematic = true;
         rb.constraints = RigidbodyConstraints2D.FreezeAll;
+        
+        GetComponentInChildren<ParticleSystem>().Play();
         if(isBouncing && enemyTarget.Count > 0)
             return;
         anim.SetBool("Rotation", false);

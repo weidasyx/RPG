@@ -2,31 +2,41 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
+
+[RequireComponent(typeof(Rigidbody2D))]
+[RequireComponent(typeof(CapsuleCollider2D))]
+[RequireComponent(typeof(EnemyStats))]
+[RequireComponent(typeof(EntityFX))]
+[RequireComponent(typeof(ItemDrop))]
 public class Enemy : Entity
 {
     [SerializeField] protected LayerMask whatisPlayer;
     
     [Header("Stunned info")]
-    public float stunDuration;
-    public Vector2 stunDirection;
+    public float stunDuration = 1;
+    public Vector2 stunDirection = new Vector2(8, 8);
     protected bool canBeStunned;
     [SerializeField] protected GameObject counterImage;
     
     [Header("Move info")]
-    public float moveSpeed;
-    public float idleTime;
-    public float battleTime;
+    public float moveSpeed = 1.5f;
+    public float idleTime = 2;
+    public float battleTime = 7;
     private float defaultMoveSpeed;
-    
-    [Header("Attack info")] 
-    public float attackDistance;
-    public float attackCooldown;
+
+    [Header("Attack info")] public float agroDistance = 2;
+    public float attackDistance = 2;
+    [FormerlySerializedAs("minAttackCooldown")] public float attackCooldown;
+    public float minAttackCooldown = 1;
+    public float maxAttackCooldown = 2;
     [HideInInspector] public float lastTimeAttacked;
     
     public EmemyStateMechine stateMechine { get; private set; }
 
     public string LastAnimBoolName { get; private set; }
+    public EntityFX fx { get; private set; }
 
     protected override void Awake()
     {
@@ -34,6 +44,12 @@ public class Enemy : Entity
         stateMechine = new EmemyStateMechine();
         
         defaultMoveSpeed = moveSpeed;
+    }
+
+    protected override void Start()
+    {
+        base.Start();
+        fx = GetComponentInChildren<EntityFX>();
     }
 
     protected override void Update()
@@ -77,8 +93,10 @@ public class Enemy : Entity
             anim.speed = 1;
         }
     }
+    
+    public virtual void FreezeTimeFor(float _duration) => StartCoroutine(FreezeTimerCoroutine(_duration));
 
-    protected virtual IEnumerator FreezeTimerFor(float _seconds)
+    protected virtual IEnumerator FreezeTimerCoroutine(float _seconds)
     {
         FreezeTime(true);
         
@@ -113,6 +131,10 @@ public class Enemy : Entity
 
 
     public virtual void AnimationFinishTrigger() => stateMechine.currentState.AnimationFinishTrigger();
+    public virtual void AnimationSpecialAttackTrigger()
+    {
+      
+    }
 
     public virtual RaycastHit2D IsPlayerDectected() =>
         Physics2D.Raycast(wallCheck.position, Vector2.right * facingDir, 50, whatisPlayer);

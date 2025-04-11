@@ -5,20 +5,26 @@ using UnityEngine;
 
 public class Skill : MonoBehaviour
 {
-    [SerializeField] protected float cooldown;
-    protected float cooldownTimer;
+    public float cooldown;
+    public float cooldownTimer;
     
     protected Player player;
 
     protected virtual void Start()
     {
         player = PlayerManager.instance.player;
+        CheckUnlock();
     }
 
 
     protected virtual void Update()
     {
         cooldownTimer -= Time.deltaTime;
+    }
+
+    protected virtual void CheckUnlock()
+    {
+        
     }
 
     public virtual bool CanUseSkill()
@@ -29,7 +35,7 @@ public class Skill : MonoBehaviour
             UseSkill();
             return true;
         }
-        Debug.Log(cooldownTimer);
+        player.fx.CreatePopUpText("CoolDown");
         return false;
     }
 
